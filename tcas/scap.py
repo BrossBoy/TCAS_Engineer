@@ -13,8 +13,12 @@ time.sleep(3)
 
 eng_list = driver.find_elements(By.XPATH, '//*[@id="results"]/ul/li')
 
+engineerings = []
+universitys = []
+links = []
+
 for i in range(len(eng_list)):
-    name = (
+    engineerings.append(
         driver.find_element(
             By.XPATH, f'//*[@id="results"]/ul/li[{i + 1}]/a/h3/span'
         ).text
@@ -23,12 +27,19 @@ for i in range(len(eng_list)):
             By.XPATH, f'//*[@id="results"]/ul/li[{i + 1}]/a/h3/small'
         ).text
     )
-    univer = driver.find_element(
-        By.XPATH, f'//*[@id="results"]/ul/li[{i + 1}]/a/span/span'
-    ).text
-    link = driver.find_element(
-        By.XPATH, f'//*[@id="results"]/ul/li[{i + 1}]/a'
-    ).get_attribute("href")
+    universitys.append(
+        driver.find_element(
+            By.XPATH, f'//*[@id="results"]/ul/li[{i + 1}]/a/span/span'
+        ).text
+    )
+    links.append(
+        driver.find_element(
+            By.XPATH, f'//*[@id="results"]/ul/li[{i + 1}]/a'
+        ).get_attribute("href")
+    )
 
+unique_university = set(universitys)
+
+print(unique_university, len(unique_university))
 
 driver.close()

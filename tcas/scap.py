@@ -28,8 +28,5 @@ links = [
 unique_university = set(universitys)
 
 print(len(course), len(course_type), len(universitys))
-# driver.get(links[0])
-# time.sleep(1)
-# term_fees = driver.find_elements(By.XPATH, '//*[@id="overview"]/dl/dd')
 
 driver.close()

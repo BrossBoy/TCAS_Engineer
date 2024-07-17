@@ -11,35 +11,25 @@ search_bar = driver.find_element("id", "search")
 search_bar.send_keys("คณะวิศวกรรม")
 time.sleep(3)
 
-eng_list = driver.find_elements(By.XPATH, '//*[@id="results"]/ul/li')
+# eng_list = driver.find_elements(By.XPATH, '//*[@id="results"]/ul/li')
 
-engineerings = []
-universitys = []
-links = []
-
-for i in range(len(eng_list)):
-    engineerings.append(
-        driver.find_element(
-            By.XPATH, f'//*[@id="results"]/ul/li[{i + 1}]/a/h3/span'
-        ).text
-        + " "
-        + driver.find_element(
-            By.XPATH, f'//*[@id="results"]/ul/li[{i + 1}]/a/h3/small'
-        ).text
-    )
-    universitys.append(
-        driver.find_element(
-            By.XPATH, f'//*[@id="results"]/ul/li[{i + 1}]/a/span/span'
-        ).text
-    )
-    links.append(
-        driver.find_element(
-            By.XPATH, f'//*[@id="results"]/ul/li[{i + 1}]/a'
-        ).get_attribute("href")
-    )
+course = driver.find_elements(By.XPATH, '//*[@id="results"]/ul/li/a/h3/span')
+course_type = driver.find_elements(By.XPATH, '//*[@id="results"]/ul/li/a/h3/small')
+engineerings = [f"{i.text} {j.text}" for i, j in zip(course, course_type)]
+universitys = [
+    i.text
+    for i in driver.find_elements(By.XPATH, '//*[@id="results"]/ul/li/a/span/span')
+]
+links = [
+    i.get_attribute("href")
+    for i in driver.find_elements(By.XPATH, '//*[@id="results"]/ul/li/a')
+]
 
 unique_university = set(universitys)
 
-print(unique_university, len(unique_university))
+print(len(course), len(course_type), len(universitys))
+# driver.get(links[0])
+# time.sleep(1)
+# term_fees = driver.find_elements(By.XPATH, '//*[@id="overview"]/dl/dd')
 
 driver.close()

@@ -3,6 +3,7 @@ from dash import Dash, html, dcc, Input, Output
 import plotly.express as px
 import pandas as pd
 import re
+import plotly.graph_objects as go
 
 tcas_data = []
 name = []
@@ -74,9 +75,7 @@ app.layout = html.Div(
     [
         html.H1("TCAS Dashboard", style={"color": "Orange", "textAlign": "center"}),
         html.P("เลือกข้อมูลที่ต้องการ", style={"color": "blue"}),
-        dcc.Dropdown(
-            options=dropdown_opt, id="dropdown", placeholder="เลือกมหาวิทยาลัย"
-        ),
+        dcc.Dropdown(options=dropdown_opt, id="dropdown", placeholder="เลือกมหาวิทยาลัย"),
         dcc.Dropdown(
             options=course_opt, id="course_dropdown", placeholder="เลือกหลักสูตร"
         ),
@@ -84,11 +83,8 @@ app.layout = html.Div(
     ]
 )
 
-# Define callback to update course dropdown based on university selection
-@app.callback(
-    Output("course_dropdown", "options"),
-    [Input("dropdown", "value")]
-)
+
+@app.callback(Output("course_dropdown", "options"), [Input("dropdown", "value")])
 def update_course_dropdown(selected_universities):
     if not selected_universities:
         return course_opt
@@ -100,39 +96,53 @@ def update_course_dropdown(selected_universities):
     filtered_courses = list(filtered_courses)
     return [{"label": course, "value": course} for course in filtered_courses]
 
-# Define callback to update bar_chart based on dropdown and course_dropdown selections
+
 @app.callback(
     Output("bar_chart", "figure"),
-    [Input("dropdown", "value"),
-     Input("course_dropdown", "value")]
+    [Input("dropdown", "value"), Input("course_dropdown", "value")],
 )
 def update_bar_chart(selected_universities, selected_courses):
     if not selected_universities or not selected_courses:
         return go.Figure()
 
-    filtered_data = [entry for entry in new_data if entry["University"] in selected_universities and entry["Course"] in selected_courses]
+    filtered_data = [
+        entry
+        for entry in new_data
+        if entry["University"] in selected_universities
+        and entry["Course"] in selected_courses
+    ]
 
     fig = go.Figure()
     fig.update_layout(
         title="จำนวนการรับสมัครในแต่ละหลักสูตร",
         xaxis_title="รอบของการสมัคร TCAS",
         yaxis_title="จำนวนคนที่รับในแต่ละรอบ",
-        plot_bgcolor='rgba(0,0,0,0)'
+        plot_bgcolor="rgba(0,0,0,0)",
     )
 
     for round_name in ["Tcas1", "Tcas2", "Tcas3", "Tcas4"]:
         round_data = [entry[round_name] for entry in filtered_data]
-        fig.add_trace(go.Bar(
-            x=[round_name],
-            y=[sum(round_data)],
-            name=round_name,
-            marker=dict(color="blue" if round_name == "Tcas1" else \
-                            "green" if round_name == "Tcas2" else \
-                            "orange" if round_name == "Tcas3" else \
-                            "red")
-        ))
+        fig.add_trace(
+            go.Bar(
+                x=[round_name],
+                y=[sum(round_data)],
+                name=round_name,
+                marker=dict(
+                    color=(
+                        "blue"
+                        if round_name == "Tcas1"
+                        else (
+                            "green"
+                            if round_name == "Tcas2"
+                            else "orange" if round_name == "Tcas3" else "red"
+                        )
+                    )
+                ),
+            )
+        )
 
     return fig
+
 
 if __name__ == "__main__":
     app.run(debug=True)

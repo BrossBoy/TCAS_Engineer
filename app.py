@@ -79,15 +79,18 @@ app.layout = html.Div(
         dcc.Dropdown(
             options=course_opt, id="course_dropdown", placeholder="เลือกหลักสูตร"
         ),
-        dcc.Graph(id="bar_chart"),
+        html.Div(id="selected_data"),
+        dcc.Graph(id="bar_chart2"),
+        dcc.Graph(id="bar_chart1"),
     ]
 )
 
 
+# Callback to update course dropdown based on university selection
 @app.callback(Output("course_dropdown", "options"), [Input("dropdown", "value")])
 def update_course_dropdown(selected_universities):
     if not selected_universities:
-        return course_opt
+        return [{"label": opt, "value": opt} for opt in course_opt]
 
     filtered_courses = set()
     for entry in new_data:
@@ -97,13 +100,16 @@ def update_course_dropdown(selected_universities):
     return [{"label": course, "value": course} for course in filtered_courses]
 
 
+# Callback to update bar_chart1 based on dropdown and course_dropdown selections
 @app.callback(
-    Output("bar_chart", "figure"),
+    Output("bar_chart1", "figure"),
     [Input("dropdown", "value"), Input("course_dropdown", "value")],
 )
-def update_bar_chart(selected_universities, selected_courses):
+def update_bar_chart1(selected_universities, selected_courses):
     if not selected_universities or not selected_courses:
-        return go.Figure()
+        return go.Figure(
+            data=[go.Scatter(x=[0, 1], y=[0, 1], mode="text", text="No selected data")]
+        )
 
     filtered_data = [
         entry
@@ -114,7 +120,7 @@ def update_bar_chart(selected_universities, selected_courses):
 
     fig = go.Figure()
     fig.update_layout(
-        title="จำนวนการรับสมัครในแต่ละหลักสูตร",
+        title="จำนวนการรับสมัครในแต่ละหลักสูตร (Bar Chart 1)",
         xaxis_title="รอบของการสมัคร TCAS",
         yaxis_title="จำนวนคนที่รับในแต่ละรอบ",
         plot_bgcolor="rgba(0,0,0,0)",
@@ -142,6 +148,88 @@ def update_bar_chart(selected_universities, selected_courses):
         )
 
     return fig
+
+
+# Callback to update bar_chart2 based on dropdown selection
+@app.callback(Output("bar_chart2", "figure"), [Input("dropdown", "value")])
+def update_bar_chart2(selected_university):
+    if not selected_university:
+        return go.Figure(
+            data=[go.Scatter(x=[0, 1], y=[0, 1], mode="text", text="No selected data")]
+        )
+
+    # Filter data for the selected university
+    filtered_data = [
+        entry for entry in new_data if entry["University"] == selected_university
+    ]
+
+    # Aggregate TCAS rounds for each course
+    course_totals = {}
+    for entry in filtered_data:
+        course = entry["Course"]
+        if course in course_totals:
+            course_totals[course]["Tcas1"] += entry["Tcas1"]
+            course_totals[course]["Tcas2"] += entry["Tcas2"]
+            course_totals[course]["Tcas3"] += entry["Tcas3"]
+            course_totals[course]["Tcas4"] += entry["Tcas4"]
+        else:
+            course_totals[course] = {
+                "Tcas1": entry["Tcas1"],
+                "Tcas2": entry["Tcas2"],
+                "Tcas3": entry["Tcas3"],
+                "Tcas4": entry["Tcas4"],
+            }
+
+    # Prepare data for bar chart 2 (horizontal bar chart)
+    courses = list(course_totals.keys())
+    tcas_totals = [sum(course_totals[course].values()) for course in courses]
+
+    fig = go.Figure()
+    fig.update_layout(
+        title=f"จำนวนการรับสมัครในทุกหลักสูตรของมหาวิทยาลัย {selected_university}",
+        xaxis_title="จำนวนคนที่รับในทุกรอบ",
+        yaxis_title="หลักสูตร",
+        plot_bgcolor="rgba(0,0,0,0)",
+        barmode="stack",  # Optional: Stack bars for better comparison
+        yaxis={"categoryorder": "total ascending"},  # Order bars by total ascending
+    )
+
+    fig.add_trace(
+        go.Bar(
+            x=tcas_totals,
+            y=courses,
+            orientation="h",  # Horizontal orientation
+            marker=dict(color="blue"),
+            name="Total TCAS",
+        )
+    )
+
+    return fig
+
+
+# Callback to update selected_data display based on dropdown selections
+@app.callback(
+    Output("selected_data", "children"),
+    [Input("dropdown", "value"), Input("course_dropdown", "value")],
+)
+def update_selected_data(selected_universities, selected_courses):
+    if not selected_universities or not selected_courses:
+        return "No selected data"
+
+    filtered_data = [
+        entry
+        for entry in new_data
+        if entry["University"] in selected_universities
+        and entry["Course"] in selected_courses
+    ]
+
+    data_str = ""
+    for entry in filtered_data:
+        data_str += f"มหาวิทยาลัย: {entry['University']}, หลักสูตร: {entry['Course']}, ค่าใช้จ่าย: {entry['Cost']}"
+
+    return html.Div(
+        [html.H3("ข้อมูลที่เลือก", style={"color": "green"}), dcc.Markdown(data_str)]
+    )
 
 
 if __name__ == "__main__":
